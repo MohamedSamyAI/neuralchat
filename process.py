@@ -91,13 +91,33 @@ embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 # __________________________________________________________________________
 
 def youTubeLoader(url, language):
-    # Extract video ID from the URL
-    video_id = url.split("v=")[-1]
-    # Initialize YoutubeLoader with the video ID
-    loader = YoutubeLoader(video_id=video_id, language=language)
-    # loader = YoutubeLoader(video_id=video_id, language=["ar", "en"])
-    docs = loader.load()
-    return [doc.page_content for doc in docs]
+     try:
+        # Extract video ID from the URL
+        # video_id = url.split("v=")[-1]
+        video_id = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url).group(1)
+
+        # Add user agent header
+        loader = YoutubeLoader(
+                video_id=video_id,
+                language=language,
+                add_video_info=True,  # Get additional metadata
+                continue_on_failure=False,
+            )
+        
+        # Add custom headers
+        loader.requests_kwargs = {
+            'headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9'
+            }
+        }
+        
+        # loader = YoutubeLoader(video_id=video_id, language=["ar", "en"])
+        docs = loader.load()
+        return [doc.page_content for doc in docs]
+     except Exception as e:
+        print(f"YouTube Loader Error: {str(e)}")
+        return []
 
 # url = "https://www.youtube.com/watch?v=r0_jLP9HDuI"
 # a= youTubeLoader(url, language=["ar", "en"])
