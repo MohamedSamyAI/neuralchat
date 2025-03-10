@@ -161,7 +161,7 @@ if st.session_state["authenticated"]:
       process_button = st.button("Process Content")
 
       # Handle URL processing
-      if process_button and url or uploaded_file:
+      if process_button:
           with st.status("Processing content...", expanded=True) as status:
               try:
                   # Clear previous conversation
