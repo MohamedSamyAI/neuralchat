@@ -1,12 +1,12 @@
 # 🧠 Smart Content Chatbot
 
-Welcome to the **Smart Content Chatbot** repository! 🚀 This project is a **Streamlit-based chatbot** that processes content from YouTube videos and webpages, transforming it into a conversational interface powered by **advanced AI models**. The chatbot utilizes **LangChain, FAISS, and HuggingFace** to create an intelligent assistant capable of answering questions based on processed content.
+Welcome to the **Smart Content Chatbot** repository! 🚀 This project is a **Streamlit-based chatbot** that processes content from YouTube videos, PDFs, and webpages, transforming it into a conversational interface powered by **advanced AI models**. The chatbot utilizes **LangChain, FAISS, and HuggingFace** to create an intelligent assistant capable of answering questions based on processed content.
 
 ---
 
 ## ✨ Features
 
-✅ **Content Loading**: Automatically fetch content from YouTube videos or webpages.  
+✅ **Content Loading**: Automatically fetch content from YouTube videos, PDFs or webpages.  
 ✅ **Text Processing & Splitting**: Breaks large text into manageable chunks.  
 ✅ **Vector Embeddings & Storage**: Uses FAISS and HuggingFace embeddings for efficient retrieval.  
 ✅ **Conversational Memory**: Maintains chat history for context-aware responses.  
