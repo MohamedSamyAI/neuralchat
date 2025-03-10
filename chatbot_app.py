@@ -139,7 +139,7 @@ if st.session_state["authenticated"]:
               except Exception as e:
                   st.error(f"Error processing content: {str(e)}")
       
-      with st.expander("💭 File Status")
+      with st.expander("💭 File Status"):
           st.markdown(f"## Time proceed is {int(st.session_state.init_time)}s")
   # ------------------ Chat Interface ------------------
   if st.session_state.chatbot_initialized:
