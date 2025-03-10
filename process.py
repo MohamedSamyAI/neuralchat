@@ -10,8 +10,8 @@ load_dotenv()
 os.environ["USER_AGENT"] = "MyChatbot/1.0 (mohamed.samy@yallasquad.com)"
 
 # Document loaders
-from langchain_community.document_loaders import YoutubeLoader, WebBaseLoader
-from youtube_transcript_api import YouTubeTranscriptApi
+from langchain_community.document_loaders import WebBaseLoader
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 # Text splitter for breaking long text into manageable chunks
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 # HuggingFaceEmbeddings for vector creation
@@ -92,7 +92,7 @@ embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 # embedding = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
 # __________________________________________________________________________
-
+# process youtube videos
 def getVideoID(url) -> str:
     """
     This function gets the video id from the url provided by the user.
@@ -119,13 +119,17 @@ def get_transcription(video_id) -> str:
         # Try retrieving Arabic transcript first
         transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=["ar"])
         lang_used = "Arabic"
-    except Exception:
+    except NoTranscriptFound:
         try:
             # If Arabic is not available, try English
             transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=["en"])
             lang_used = "English"
-        except Exception:
-            raise ValueError("Error: No Arabic or English transcript available.")
+        except NoTranscriptFound:
+            return "❌ Error: No Arabic or English transcript available."
+    except TranscriptsDisabled:
+          return "❌ Error: Transcripts are disabled for this video."
+    if not transcript:
+          return "❌ Error: Retrieved transcript is empty."
 
     full_transcript = " ".join([trans['text'] for trans in transcript])
     return full_transcript  # Indicate the extracted language
