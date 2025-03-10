@@ -8,7 +8,14 @@ youtube-transcript-api>=0.6.3
 langchainhub>=0.1.21
 langchain-text-splitters>=0.3.6
 
+#for pdf
+pdfplumber
+
+#for Youtube
 pytube==15.0.0  # Explicitly add this
 sentence-transformers>=2.2.2
 beautifulsoup4>=4.12.2
 requests==2.31.0  # Add explicit version
+
+
+

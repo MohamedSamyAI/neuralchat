@@ -10,7 +10,7 @@ load_dotenv()
 os.environ["USER_AGENT"] = "MyChatbot/1.0 (mohamed.samy@yallasquad.com)"
 
 # Document loaders
-from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.document_loaders import WebBaseLoader, PDFPlumberLoader
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 # Text splitter for breaking long text into manageable chunks
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -173,7 +173,23 @@ def webBaseLoader(url: str):
 # url = "https://www.brandonrohrer.com/transformers"
 # a = webBaseLoader(url)
 # #_______________________________________________________________________________________  
+# pdf as URL
 
+def extract_pdf(file_path):
+    """
+    Uses PDFPlumberLoader to load and extract text from the PDF.
+    Accepts either a URL string or a local file path.
+    """
+    try:
+      loader = PDFPlumberLoader(file_path)
+      documents = loader.load()
+      # Join all pages' content into one string
+      pages = "\n".join([page.page_content for page in documents])
+      return pages
+    except Exception as e:
+        print(f"error in extract text from pdf {e}")
+
+#_____________________________________________________________________________________________
 def textSplitter(text):
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=3000,

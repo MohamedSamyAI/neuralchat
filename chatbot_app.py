@@ -5,9 +5,11 @@ from process import *  # Import your existing functions
 import uuid
 import time
 import datetime
+from urllib.parse import urlparse
+import tempfile
 
 
-# Configure Streamlit page
+# -----------------Configure Streamlit page------------------------------------
 st.set_page_config(
     page_title="NeuralChat",
     page_icon="💬",
@@ -54,6 +56,66 @@ if not st.session_state["authenticated"]:
     st.info("Please enter the correct password to access the app.")
     st.stop()
 
+
+# ------------------------------functions helper -------------------------------
+def url_type(url):
+    """
+    Receives a URL and dispatches it to the appropriate handler
+    based on its characteristics (YouTube, PDF, or general web).
+    """
+    parsed = urlparse(url)
+    domain = parsed.netloc.lower()
+    path = parsed.path.lower()
+
+    # Check for YouTube URLs
+    if "youtube.com" in domain or "youtu.be" in domain:
+        return f"youtube"
+    # Check for PDF files by extension
+    elif path.endswith(".pdf"):
+        return f"pdf"
+    # Fallback to general web processing
+    else:
+        return f"web"
+    
+
+def url_processing(url):
+    link = url_type(url) 
+    if link == "pdf":
+        try:
+          st.write("Loading PDF content...")
+          content =  extract_pdf(url)
+        except ValueError as e:
+            print(e)
+    elif link == "youtube":
+        if "youtube.com" in url or "youtu.be" in url:
+            st.write("Loading YouTube content...")
+        try:
+            video_id = getVideoID(url)
+            content = get_transcription(video_id)
+            title = get_video_title(video_id)
+        except ValueError as e:
+            print(e)
+    else:
+        try:
+          st.write("Loading webpage content...")
+          content = webBaseLoader(url)
+        except ValueError as e:
+            print(e)
+                  
+    return content
+              
+
+
+def upload_processing(uploaded_file):
+    if uploaded_file is not None:
+        # Save the uploaded file temporarily and extract its text
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            tmp_file_path = tmp_file.name
+        with st.spinner("Processing file..."):
+            content = extract_pdf(tmp_file_path)
+        return content
+    
 # ------------------ Main App Content ------------------
 if st.session_state["authenticated"]:
   # Page header
@@ -61,12 +123,11 @@ if st.session_state["authenticated"]:
   st.caption("Chat with any YouTube video or webpage content")
 
 
-  # URL input section
+  #--------------------------------- URL input section---------------------------------------
   with st.sidebar:
       st.header("🛠️ Configuration")
-      url = st.text_input("Enter YouTube or Website URL:")
 
-      # Model selection with information
+      # ---------Model selection with information
       with st.expander("💭 Model Selection"):
         model_options = {
             "deepseek-r1-distill-qwen-32b": "Balanced performance", 
@@ -83,40 +144,42 @@ if st.session_state["authenticated"]:
 
         temperature = st.slider("Temperature", 0.0, 1.0, 0.7, 0.1,
                                   help="Higher values make output more creative")
+        
 
-      process_url = st.button("Process Content")
+      #------------------Pick File
+      with st.expander("Select input type"):
+          # Choose input type: URL or file upload
+          input_type = st.radio("", ("URL", "Upload File"))
+
+          if input_type == "URL":
+              url = st.text_input("Enter YouTube or Website or PDF URL:")
+          
+          elif input_type == "Upload File":
+              uploaded_file = st.file_uploader("Choose a PDF file", type=["pdf"])
+            
+
+      process_button = st.button("Process Content")
 
       # Handle URL processing
-      if process_url and url:
+      if process_button and url or uploaded_file:
           with st.status("Processing content...", expanded=True) as status:
               try:
                   # Clear previous conversation
                   st.session_state.chat_history = []
-
                   start_time = time.time()
+                  #---------------------extract text----------------------------------------------
+                  if input_type == "URL":
+                      content = url_processing(url)
+                  elif input_type == "Upload File":
+                      content = upload_processing(uploaded_file)
                   
-                  # Determine URL type and load content
-                  if "youtube.com" in url or "youtu.be" in url:
-                      st.write("Loading YouTube content...")
-                      try:
-                          video_id = getVideoID(url)
-                          content = get_transcription(video_id)
-                          title = get_video_title(video_id)
-                      except ValueError as e:
-                          print(e)
-
-                  else:
-                      st.write("Loading webpage content...")
-                      content = webBaseLoader(url)
+                  #--------------------------------Process content----------------------------------
                   
-                  # Process content
                   # Split text
                   chunks = textSplitter(content) 
 
                   # Create vector store
                   retriever = create_vector_db(chunks)
-                  
-
 
                   # Initialize Groq model
                   if selected_model or temperature:
@@ -141,6 +204,7 @@ if st.session_state["authenticated"]:
       
       # with st.expander("💭 File Status"):
       #     st.markdown(f"## Time proceed is {int(st.session_state.init_time)}s")
+
   # ------------------ Chat Interface ------------------
   if st.session_state.chatbot_initialized:
   # System status and metrics
