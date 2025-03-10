@@ -26,7 +26,7 @@ if "chain" not in st.session_state:
 if 'chatbot_initialized' not in st.session_state:
     st.session_state.chatbot_initialized = False
 if 'init_time' not in st.session_state:
-    st.session_state.init_time = None
+    st.session_state.init_time = 0
 if 'response_time' not in st.session_state:
     st.session_state.response_time = []
 
@@ -139,8 +139,8 @@ if st.session_state["authenticated"]:
               except Exception as e:
                   st.error(f"Error processing content: {str(e)}")
       
-      with st.expander("💭 File Status"):
-          st.markdown(f"## Time proceed is {int(st.session_state.init_time)}s")
+      # with st.expander("💭 File Status"):
+      #     st.markdown(f"## Time proceed is {int(st.session_state.init_time)}s")
   # ------------------ Chat Interface ------------------
   if st.session_state.chatbot_initialized:
   # System status and metrics
