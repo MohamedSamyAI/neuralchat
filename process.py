@@ -4,11 +4,14 @@ import re
 from time import sleep
 from dotenv import load_dotenv
 import streamlit as st
+import requests
+
 load_dotenv()
 os.environ["USER_AGENT"] = "MyChatbot/1.0 (mohamed.samy@yallasquad.com)"
 
 # Document loaders
 from langchain_community.document_loaders import YoutubeLoader, WebBaseLoader
+from youtube_transcript_api import YouTubeTranscriptApi
 # Text splitter for breaking long text into manageable chunks
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 # HuggingFaceEmbeddings for vector creation
@@ -90,34 +93,65 @@ embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # __________________________________________________________________________
 
-def youTubeLoader(url, language):
-     try:
-        # Extract video ID from the URL
-        # video_id = url.split("v=")[-1]
-        video_id = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url).group(1)
+def getVideoID(url) -> str:
+    """
+    This function gets the video id from the url provided by the user.
+    Handles different YouTube URL formats.
+    """
+    if not url:
+        return None
+    # Handle different YouTube URL patterns
+    if "youtu.be/" in url:
+        return url.split("youtu.be/")[1].split("?")[0]
+    elif "v=" in url:
+        return url.split("v=")[1].split("&")[0]
+    else:
+        raise ValueError("Invalid YouTube URL format")
+    
 
-        # Add user agent header
-        loader = YoutubeLoader(
-                video_id=video_id,
-                language=language,
-                add_video_info=True,  # Get additional metadata
-                continue_on_failure=False,
-            )
-        
-        # Add custom headers
-        loader.requests_kwargs = {
-            'headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-                'Accept-Language': 'en-US,en;q=0.9'
-            }
-        }
-        
-        # loader = YoutubeLoader(video_id=video_id, language=["ar", "en"])
-        docs = loader.load()
-        return [doc.page_content for doc in docs]
-     except Exception as e:
-        print(f"YouTube Loader Error: {str(e)}")
-        return []
+
+def get_transcription(video_id) -> str:
+    """
+    Retrieves transcript from YouTube in Arabic if available, otherwise in English.
+    If neither Arabic nor English is found, it raises an error.
+    """
+    try:
+        # Try retrieving Arabic transcript first
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=["ar"])
+        lang_used = "Arabic"
+    except Exception:
+        try:
+            # If Arabic is not available, try English
+            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=["en"])
+            lang_used = "English"
+        except Exception:
+            raise ValueError("Error: No Arabic or English transcript available.")
+
+    full_transcript = " ".join([trans['text'] for trans in transcript])
+    return full_transcript  # Indicate the extracted language
+
+# Example usage
+# try:
+#     transcriptions = get_transcription(video_id)
+#     print(transcriptions)
+# except ValueError as e:
+#     print(e)
+
+
+
+def get_video_title(video_id) -> str:
+    """
+    Gets the title of the YouTube video.
+    Falls back to video ID if title cannot be retrieved.
+    """
+    try:
+        url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()['title']
+    except Exception as e:
+        print(f"Could not get video title: {e}")
+    return video_id
 
 # url = "https://www.youtube.com/watch?v=r0_jLP9HDuI"
 # a= youTubeLoader(url, language=["ar", "en"])

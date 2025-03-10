@@ -98,7 +98,13 @@ if st.session_state["authenticated"]:
                   # Determine URL type and load content
                   if "youtube.com" in url or "youtu.be" in url:
                       st.write("Loading YouTube content...")
-                      content = youTubeLoader(url, language=["ar", "en"])
+                      try:
+                          video_id = getVideoID(url)
+                          content = get_transcription(video_id)
+                          title = get_video_title(video_id)
+                      except ValueError as e:
+                          print(e)
+
                   else:
                       st.write("Loading webpage content...")
                       content = webBaseLoader(url)
@@ -129,10 +135,12 @@ if st.session_state["authenticated"]:
                     
 
                     status.update(label="Content processed successfully!", state="complete")
-                  st.markdown(f"## Time proceed is {int(st.session_state.init_time)}s")
+                  
               except Exception as e:
                   st.error(f"Error processing content: {str(e)}")
-
+      
+      with st.expander("💭 File Status")
+          st.markdown(f"## Time proceed is {int(st.session_state.init_time)}s")
   # ------------------ Chat Interface ------------------
   if st.session_state.chatbot_initialized:
   # System status and metrics
